@@ -1,6 +1,5 @@
 <?php namespace Backend\FormWidgets;
 
-use Str;
 use Input;
 use Request;
 use Response;
@@ -36,17 +35,17 @@ class FileUpload extends FormWidgetBase
     /**
      * @var string Prompt text to display for the upload button.
      */
-    public $prompt = null;
+    public $prompt;
 
     /**
      * @var int Preview image width
      */
-    public $imageWidth = null;
+    public $imageWidth;
 
     /**
      * @var int Preview image height
      */
-    public $imageHeight = null;
+    public $imageHeight;
 
     /**
      * @var mixed Collection of acceptable file types.
@@ -122,6 +121,10 @@ class FileUpload extends FormWidgetBase
      */
     protected function prepareVars()
     {
+        if ($this->formField->disabled) {
+            $this->previewMode = true;
+        }
+
         if ($this->previewMode) {
             $this->useCaption = false;
         }
@@ -207,7 +210,7 @@ class FileUpload extends FormWidgetBase
         $cssDimensions = '';
 
         if ($mode == 'block') {
-            $cssDimensions .= ($this->imageWidth)
+            $cssDimensions .= $this->imageWidth
                 ? 'width: '.$this->imageWidth.'px;'
                 : 'width: '.$this->imageHeight.'px;';
 
@@ -216,7 +219,7 @@ class FileUpload extends FormWidgetBase
                 : 'height: auto;';
         }
         else {
-            $cssDimensions .= ($this->imageWidth)
+            $cssDimensions .= $this->imageWidth
                 ? 'width: '.$this->imageWidth.'px;'
                 : 'width: auto;';
 
@@ -407,7 +410,8 @@ class FileUpload extends FormWidgetBase
             $parent = $fileRelation->getParent();
             if ($this->attachOnUpload && $parent && $parent->exists) {
                 $fileRelation->add($file);
-            } else {
+            }
+            else {
                 $fileRelation->add($file, $this->sessionKey);
             }
 
@@ -419,14 +423,14 @@ class FileUpload extends FormWidgetBase
                 'path' => $file->pathUrl
             ];
 
-            Response::json($result, 200)->send();
-
+            $response = Response::make($result, 200);
         }
         catch (Exception $ex) {
-            Response::json($ex->getMessage(), 400)->send();
+            $response = Response::make($ex->getMessage(), 400);
         }
 
-        exit;
+        // Override the controller response
+        $this->controller->setResponse($response);
     }
 
     /**
